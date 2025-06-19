@@ -30,4 +30,4 @@ class AzureBlobDataManager:
                 random_blob_name = str(uuid.uuid4())
                 blob_client = container_client.get_blob_client(f"{folder_name}/{random_blob_name}.json")
                 await blob_client.upload_blob(json.dumps(data).encode("utf-8"), overwrite=True)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.2)

@@ -29,7 +29,7 @@ async def cleanup_old_logs():
             file_date_str = log_file.replace(".log", "")
             try:
                 file_date = datetime.strptime(file_date_str, "%Y-%m-%d")
-                if (now - file_date).days > 10:
+                if (now - file_date).days > 8:
                     os.remove(log_path)
                     logger.info(f"Deleted old log file: {log_path}")
             except ValueError:
@@ -100,6 +100,84 @@ date: datetime, email_client: AzureEmailClient) -> None:
             subject=f"Error: Ticket Extraction Failed - {date.strftime('%Y-%m-%d')}")
         raise
 
+async def process_thursday_data(tdx_client: TeamDynamixClient, azure_blob_manager: AzureBlobDataManager, 
+date: datetime, email_client: AzureEmailClient) -> None:
+    """
+    Process Thursday-specific data for the given date, fetching and uploading applications,
+    services, and knowledge base articles for app_id=357 to Azure Blob Storage.
+
+    Args:
+        tdx_client (TeamDynamixClient): Client for interacting with TeamDynamix API.
+        azure_blob_manager (AzureBlobDataManager): Manager for uploading data to Azure Blob Storage.
+        date (datetime): The date being processed.
+        email_client (AzureEmailClient): Client for sending error emails.
+
+    Raises:
+        Exception: If any API call or upload fails, after logging and sending an error email.
+    """
+    logger.info(f"Processing Thursday-specific data for {date.strftime('%Y-%m-%d')} with app_id=357")
+
+    # Get and upload applications
+    try:
+        applications = await tdx_client.get_applications()
+        await azure_blob_manager.upload_data(
+            f"APPLICATIONS/{date.strftime('%Y-%m')}",
+            {"date": date.strftime('%Y-%m-%d'), "applications": applications}
+        )
+        logger.info(f"Uploaded {len(applications)} applications for {date.strftime('%Y-%m-%d')}")
+    except Exception as e:
+        error_msg = f"Failed to upload applications for {date.strftime('%Y-%m-%d')}: {str(e)}"
+        logger.error(error_msg)
+        await email_client.send_error_email(
+            error_message=error_msg,
+            subject=f"Error: Applications Upload Failed - {date.strftime('%Y-%m-%d')}"
+        )
+        raise
+
+    # Get and upload services
+    try:
+        services = await tdx_client.get_services(app_id=357)
+        await azure_blob_manager.upload_data(
+            f"SERVICES/{date.strftime('%Y-%m')}",
+            {"date": date.strftime('%Y-%m-%d'), "services": services}
+        )
+        logger.info(f"Uploaded {len(services)} services for {date.strftime('%Y-%m-%d')}")
+    except Exception as e:
+        error_msg = f"Failed to upload services for {date.strftime('%Y-%m-%d')}: {str(e)}"
+        logger.error(error_msg)
+        await email_client.send_error_email(
+            error_message=error_msg,
+            subject=f"Error: Services Upload Failed - {date.strftime('%Y-%m-%d')}"
+        )
+        raise
+
+    # Get and upload knowledge base articles
+    try:
+        # Search for knowledge base article IDs
+        knowledge_ids = await tdx_client.search_knowledgebase(app_id=357)
+        logger.info(f"Found {len(knowledge_ids)} knowledge base articles for app_id=357")
+        for knowledge_id in knowledge_ids:
+            try:
+                knowledge_data = await tdx_client.get_knowledgebase(app_id=357, knowledge_id=knowledge_id)
+                await azure_blob_manager.upload_data(
+                    f"KNOWLEDGEBASE/{date.strftime('%Y-%m')}",
+                    {"knowledge_id": knowledge_id, "data": knowledge_data}
+                )
+                logger.info(f"Uploaded knowledge base article ID {knowledge_id} for {date.strftime('%Y-%m-%d')}")
+            except Exception as e:
+                # Skip invalid knowledge IDs but log the error
+                logger.warning(f"Failed to fetch knowledge base article ID {knowledge_id}: {str(e)}")
+                continue
+    except Exception as e:
+        error_msg = f"Failed to process knowledge base articles for {date.strftime('%Y-%m-%d')}: {str(e)}"
+        logger.error(error_msg)
+        await email_client.send_error_email(
+            error_message=error_msg,
+            subject=f"Error: Knowledge Base Upload Failed - {date.strftime('%Y-%m-%d')}"
+        )
+        raise
+
+
 async def main():
     """
     Main function to extract historical ticket data from LAST_RUN_TIME (or January 1, 2025) to current date,
@@ -134,6 +212,7 @@ async def main():
         
         current_date = start_date.replace(minute=0, second=0, microsecond=0)
 
+
         # # Initialize clients
         token_manager = TokenManager(username=username,password=password)
         await token_manager.authenticate()
@@ -150,7 +229,11 @@ async def main():
 
         # # Process each day
         while current_date <= end_date:
-            await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
+            # print(current_date)
+            # await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
+            # # Check if the current day is Thursday (weekday() == 3)
+            if current_date.weekday() == 3:
+                await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
             current_date += timedelta(days=1)
 
         # Update LAST_RUN_TIME in .env
