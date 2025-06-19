@@ -10,17 +10,17 @@ Logs activities to daily files in a logs subfolder, deleting logs older than 10 
 Sends email notifications for errors to a configured recipient.
 Modular design with separate classes for token management, Azure storage, TeamDynamix API, and email services.
 
-##Prerequisites
+## Prerequisites
 
 Python 3.8+
 Azure Blob Storage account
 Azure Communication Services account
 TeamDynamix API credentials
 
-##Installation
+## Installation
 
 Clone the repository
-cd AZURE_TEAMDYNAMIX_LINKING 
+cd TDX-STAGE-AZURE 
 
 
 Create a virtual environment:python -m venv venv
@@ -106,7 +106,7 @@ For questions, contact your_email@example.com.
 
 ### Notes
 
-- **Contact Email**: karthikeya.rekulapalli@midlandhealth.org
+- **Contact Email**: keyakarthi8@gmail.com
 - **Simplicity**: The README is kept simple with essential sections (Overview, Installation, Usage, etc.) suitable for a small project.
 - **Current Date**: Reflects June 19, 2025, 11:06 AM CDT, ensuring the README is up-to-date.
 - **Testing**: Verify the README instructions by cloning the repository in a new directory and following the steps.
