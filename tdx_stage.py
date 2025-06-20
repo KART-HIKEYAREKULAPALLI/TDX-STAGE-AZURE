@@ -230,7 +230,7 @@ async def main():
         # # Process each day
         while current_date <= end_date:
             # print(current_date)
-            # await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
+            await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
             # # Check if the current day is Thursday (weekday() == 3)
             if current_date.weekday() == 3:
                 await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
