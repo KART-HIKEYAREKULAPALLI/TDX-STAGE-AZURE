@@ -42,6 +42,7 @@ date: datetime, email_client: AzureEmailClient) -> None:
         # Search tickets for the given date
         tickets = await tdx_client.search_tickets(date=date)
         logger.info(f"Found {len(tickets)} tickets for {date.strftime('%Y-%m-%d')}")
+        print(f"Found {len(tickets)} tickets for {date.strftime('%Y-%m-%d')}")
         
         # Process each ticket
         for ticket in tickets:
@@ -229,15 +230,15 @@ async def main():
 
         # # Process each day
         while current_date <= end_date:
-            # print(current_date)
+            print(current_date)
             await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
             # # Check if the current day is Thursday (weekday() == 3)
-            if current_date.weekday() == 3:
-                await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
-            current_date += timedelta(days=1)
+            # if current_date.weekday() == 3:
+            #     await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
+            # current_date += timedelta(days=1)
 
         # Update LAST_RUN_TIME in .env
-        current_time_str = datetime.now().isoformat()
+        current_time_str = end_date.isoformat()
         set_key('.env', "LAST_RUN_TIME", current_time_str)
         logger.info(f"Updated LAST_RUN_TIME to {current_time_str}")
     
