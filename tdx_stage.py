@@ -232,10 +232,10 @@ async def main():
         while current_date <= end_date:
             print(current_date)
             await extract_daily_tickets(tdx_client, azure_blob_manager, current_date, email_client)
-            # # Check if the current day is Thursday (weekday() == 3)
-            # if current_date.weekday() == 3:
-            #     await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
-            # current_date += timedelta(days=1)
+            # Check if the current day is Thursday (weekday() == 3)
+            if current_date.weekday() == 3:
+                await process_thursday_data(tdx_client, azure_blob_manager, current_date, email_client)
+            current_date += timedelta(days=1)
 
         # Update LAST_RUN_TIME in .env
         current_time_str = end_date.isoformat()
