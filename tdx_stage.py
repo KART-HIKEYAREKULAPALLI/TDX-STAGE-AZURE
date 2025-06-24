@@ -211,7 +211,7 @@ async def main():
         else:
             start_date = datetime.now()-timedelta(days=3)
         
-        current_date = start_date.replace(minute=0, second=0, microsecond=0)
+        current_date = start_date.replace(hour=0,minute=0, second=0, microsecond=0)
 
 
         # # Initialize clients
